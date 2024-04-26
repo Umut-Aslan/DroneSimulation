@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DroneSimulationBachelor.Abstractions;
 
-namespace DroneSimulationBachelor
+namespace DroneSimulationBachelor.Model
 {
     public class DataNode : WayPoint
     {
@@ -13,7 +14,7 @@ namespace DroneSimulationBachelor
         TimeSpan TransmissionPeriod;
         public string ID { get; set; }
 
-        public DataNode(int x, int y, TimeSpan period, DateTime lastCollectionTime, string id) : base(x,y)
+        public DataNode(int x, int y, TimeSpan period, DateTime lastCollectionTime, string id) : base(x, y)
         {
             ID = id;
             TransmissionPeriod = period;
@@ -24,7 +25,7 @@ namespace DroneSimulationBachelor
         {
             List<DateTime> data = new();
             DateTime firstNewTimeStamp = LastCollectedTimeStamp + TransmissionPeriod;
-            for(DateTime time = firstNewTimeStamp; time <= currentTime; time+=TransmissionPeriod)
+            for (DateTime time = firstNewTimeStamp; time <= currentTime; time += TransmissionPeriod)
             {
                 data.Add(time);
                 LastCollectedTimeStamp = time;

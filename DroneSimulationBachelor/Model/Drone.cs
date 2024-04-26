@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DroneSimulationBachelor.Abstractions;
 
-namespace DroneSimulationBachelor
+namespace DroneSimulationBachelor.Model
 {
 
     public class Drone
@@ -29,21 +30,21 @@ namespace DroneSimulationBachelor
             WayPoint currWayPoint = Route[WayPointIndex];
             double dx = Math.Abs(lastWayPoint.X - currWayPoint.X);
             double dy = Math.Abs(lastWayPoint.Y - currWayPoint.Y);
-            double distance = Math.Sqrt(dx*dx + dy*dy);
+            double distance = Math.Sqrt(dx * dx + dy * dy);
             //speed = 1 distance unit per minute
             double speed = 1.0;
-            CurrentTime = CurrentTime.AddMinutes(distance*speed);
+            CurrentTime = CurrentTime.AddMinutes(distance * speed);
 
-            if(currWayPoint is CentralServer)
+            if (currWayPoint is CentralServer)
             {
                 CentralServer centralServer = (CentralServer)currWayPoint;
-                foreach(var kvp in NodeData)
+                foreach (var kvp in NodeData)
                 {
                     centralServer.ReceiveData(kvp.Key, kvp.Value, CurrentTime);
                     NodeData[kvp.Key].Clear();
                 }
             }
-            else if(currWayPoint is DataNode)
+            else if (currWayPoint is DataNode)
             {
                 DataNode dataNode = (DataNode)currWayPoint;
                 NodeData[dataNode.ID] = dataNode.GetDataAtTime(CurrentTime);

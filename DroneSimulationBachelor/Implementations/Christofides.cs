@@ -1,27 +1,38 @@
-﻿using System;
+﻿using DroneSimulationBachelor.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DroneSimulationBachelor
+namespace DroneSimulationBachelor.Implementations
 {
-    public class MinimumSpanningTreeRouteGenerator : IRouteGenerator
+    public class Christofides : IRouteGenerator
     {
         public List<WayPoint> GenerateRoute(List<WayPoint> dataPoints)
         {
-            if (dataPoints == null || dataPoints.Count == 0)
-                return null;
+            //create a MST T for Graph G(V,E)
+            Graph F = MinimumSpanningTree(new Graph(dataPoints));
+            //find minimal perfect matching (regarding weight) M with odd degree
+            Graph M = MinimumCostPerfectMatchingOddDegree(F);
+            //add Edges to T
 
-            // Create a set to hold vertices not yet included in the MST
-            HashSet<WayPoint> remainingVertices = new HashSet<WayPoint>(dataPoints);
+            //construct a eulerian tour
 
-            // Choose a starting vertex arbitrarily
-            WayPoint startVertex = remainingVertices.First();
-            remainingVertices.Remove(startVertex);
+            //construct hamiltonian tour.
+        }
+
+        public Graph MinimumSpanningTree(Graph g)
+        {
+            // Create a set to hold vertices not yet included in the MST "01"
+            HashSet<WayPoint> remainingVertices = new HashSet<WayPoint>(g.AdjacencyList.Keys);
+
+            WayPoint currentVertex = remainingVertices.First();
+            remainingVertices.Remove(currentVertex);
 
             // Initialize the MST with the starting vertex
-            List<WayPoint> mst = new List<WayPoint> { startVertex };
+            Graph mst = new Graph();
+            mst.AddVertex(currentVertex);
 
             // Initialize a dictionary to store the closest neighbor for each vertex
             Dictionary<WayPoint, WayPoint> closestNeighbors = new Dictionary<WayPoint, WayPoint>();
@@ -32,8 +43,8 @@ namespace DroneSimulationBachelor
             // Initialize the closest distances for each vertex
             foreach (WayPoint vertex in remainingVertices)
             {
-                closestNeighbors[vertex] = startVertex;
-                closestDistances[vertex] = startVertex.DistanceTo(vertex);
+                closestNeighbors[vertex] = currentVertex;
+                closestDistances[vertex] = currentVertex.DistanceTo(vertex);
             }
 
             // Iterate until all vertices are included in the MST
@@ -43,7 +54,10 @@ namespace DroneSimulationBachelor
                 WayPoint nearestVertex = remainingVertices.OrderBy(v => closestDistances[v]).First();
 
                 // Add the nearest vertex to the MST
-                mst.Add(nearestVertex);
+                mst.AddVertex(nearestVertex);
+                mst.AddEdge(currentVertex, nearestVertex, currentVertex.DistanceTo(nearestVertex));
+                WayPoint temp = nearestVertex;
+                currentVertex = temp;
                 remainingVertices.Remove(nearestVertex);
 
                 // Update closest distances and neighbors for the remaining vertices
@@ -60,6 +74,10 @@ namespace DroneSimulationBachelor
 
             // Return the MST (route)
             return mst;
+        }
+        public List<WayPoint> MinimumCostPerfectMatchingOddDegree(Graph g)
+        {
+
         }
     }
 }

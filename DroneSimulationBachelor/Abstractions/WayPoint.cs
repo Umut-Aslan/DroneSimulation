@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DroneSimulationBachelor
+namespace DroneSimulationBachelor.Abstractions
 {
     public abstract class WayPoint
     {

@@ -4,8 +4,9 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DroneSimulationBachelor.Abstractions;
 
-namespace DroneSimulationBachelor
+namespace DroneSimulationBachelor.Model
 {
     public class CentralServer : WayPoint
     {

@@ -1,4 +1,5 @@
-﻿using DroneSimulationBachelor;
+﻿using DroneSimulationBachelor.Abstractions;
+using DroneSimulationBachelor.Model;
 
 class Program
 {
