@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Umut\\source\\repos\\DroneSimulationBachelor\\DroneSimulationBachelor\\DroneSimulationBachelor.csproj": {}
+    "C:\\Users\\Umut\\Documents\\Projects\\DroneSimulation\\DroneSimulationBachelor\\DroneSimulationBachelor.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Umut\\source\\repos\\DroneSimulationBachelor\\DroneSimulationBachelor\\DroneSimulationBachelor.csproj": {
+    "C:\\Users\\Umut\\Documents\\Projects\\DroneSimulation\\DroneSimulationBachelor\\DroneSimulationBachelor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Umut\\source\\repos\\DroneSimulationBachelor\\DroneSimulationBachelor\\DroneSimulationBachelor.csproj",
+        "projectUniqueName": "C:\\Users\\Umut\\Documents\\Projects\\DroneSimulation\\DroneSimulationBachelor\\DroneSimulationBachelor.csproj",
         "projectName": "DroneSimulationBachelor",
-        "projectPath": "C:\\Users\\Umut\\source\\repos\\DroneSimulationBachelor\\DroneSimulationBachelor\\DroneSimulationBachelor.csproj",
+        "projectPath": "C:\\Users\\Umut\\Documents\\Projects\\DroneSimulation\\DroneSimulationBachelor\\DroneSimulationBachelor.csproj",
         "packagesPath": "C:\\Users\\Umut\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Umut\\source\\repos\\DroneSimulationBachelor\\DroneSimulationBachelor\\obj\\",
+        "outputPath": "C:\\Users\\Umut\\Documents\\Projects\\DroneSimulation\\DroneSimulationBachelor\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -60,7 +60,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.306\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.302\\RuntimeIdentifierGraph.json"
         }
       }
     }
