@@ -2,51 +2,67 @@
 
 public class Graph
 {
-    public Dictionary<WayPoint, List<Edge>> AdjacencyList;
+    public List<Edge> Edges { get; private set; }
+    public List<WayPoint> Vertices;
+    
 
     public Graph()
     {
-        AdjacencyList = new Dictionary<WayPoint, List<Edge>>();
+        Edges = new();
+        Vertices = new();
     }
 
     public Graph(List<WayPoint> dataPoints)
     {
-        AdjacencyList = new Dictionary<WayPoint, List<Edge>>();
+        Edges = new List<Edge>();
+        Vertices = new List<WayPoint>();
 
-        foreach(WayPoint p in dataPoints) {
-            AddVertex(p);
+        foreach (WayPoint p in dataPoints) {
+            Vertices.Add(p);
             foreach(WayPoint q in dataPoints)
             {
-                if(!(p.X == q.X || p.Y == q.Y))
+                if(p != q)
                 {
-                    AddEdge(p, q, p.DistanceTo(q));
+                    Edge edge = new Edge(p, q);
+                    AddEdge(edge);
                 }
             }
         }
     }
 
-    public void AddVertex(WayPoint vertex)
+    public void AddEdge(Edge edge)
     {
-        if (!AdjacencyList.ContainsKey(vertex))
+        if(!Edges.Contains(edge))
         {
-            AdjacencyList[vertex] = new List<Edge>();
+            Edges.Add(edge);
         }
     }
 
-    public WayPoint? RemoveVertex(WayPoint vertex)
+    public void RemoveEdge(Edge edge) 
     {
-        if (AdjacencyList.ContainsKey(vertex))
+        Edges.RemoveAll(e => e.Equals(edge));
+    }
+
+    public WayPoint GetAdjacentVertex(WayPoint vertex)
+    {
+        foreach (var edge in Edges)
         {
-            WayPoint ToRemove = vertex;
-            AdjacencyList.Remove(vertex);
-            return ToRemove;
+            if(edge.VertexA == vertex)
+            {
+                Edges.Remove(edge);
+                return edge.VertexB;
+            }
+            else if(edge.VertexB == vertex)
+            {
+                Edges.Remove(edge);
+                return edge.VertexA;
+            }
         }
         return null;
     }
 
-    public void AddEdge(WayPoint source, WayPoint destination, double weight)
+    public int GetDegree(WayPoint vertex)
     {
-        AdjacencyList[source].Add(new Edge(destination, weight));
-        AdjacencyList[destination].Add(new Edge(source, weight)); // Since it's an undirected graph
+        return Edges.Count(edge => edge.VertexA == vertex || edge.VertexB == vertex);
     }
 }

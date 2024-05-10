@@ -28,9 +28,7 @@ namespace DroneSimulationBachelor.Model
             WayPoint lastWayPoint = Route[WayPointIndex];
             WayPointIndex = ++WayPointIndex % Route.Count;
             WayPoint currWayPoint = Route[WayPointIndex];
-            double dx = Math.Abs(lastWayPoint.X - currWayPoint.X);
-            double dy = Math.Abs(lastWayPoint.Y - currWayPoint.Y);
-            double distance = Math.Sqrt(dx * dx + dy * dy);
+            double distance = currWayPoint.DistanceTo(lastWayPoint);
             //speed = 1 distance unit per minute
             double speed = 1.0;
             CurrentTime = CurrentTime.AddMinutes(distance * speed);
