@@ -1,4 +1,5 @@
-﻿using DroneSimulationBachelor.Abstractions;
+﻿using DroneSimulationBachelor;
+using DroneSimulationBachelor.Abstractions;
 using DroneSimulationBachelor.Implementations;
 using DroneSimulationBachelor.Model;
 
@@ -7,17 +8,17 @@ class Program
     static void Main(string[] args)
     {
         DateTime startTime = DateTime.MinValue;
-        DataNode d1 = new(0, 5, TimeSpan.FromMinutes(4.0), startTime, "A");
-        DataNode d2 = new(5, 5, TimeSpan.FromMinutes(4.0), startTime, "B");
-        DataNode d3 = new(5, 0, TimeSpan.FromMinutes(4.0), startTime, "C");
-        DataNode d4 = new(10, 10, TimeSpan.FromMinutes(4.0), startTime, "D");
-        DataNode d5 = new(-5, 8, TimeSpan.FromMinutes(4.0), startTime, "E");
+        DataNode d1 = new(0, 5, TimeSpan.FromMinutes(2.0), startTime, "A");
+        DataNode d2 = new(5, 5, TimeSpan.FromMinutes(5.0), startTime, "B");
+        DataNode d3 = new(5, 0, TimeSpan.FromMinutes(1.0), startTime, "C");
+        DataNode d4 = new(10, 10, TimeSpan.FromMinutes(8.0), startTime, "D");
+        DataNode d5 = new(-5, 8, TimeSpan.FromMinutes(5.0), startTime, "E");
         DataNode d6 = new(-12, -3, TimeSpan.FromMinutes(4.0), startTime, "F");
         DataNode d7 = new(19, 3, TimeSpan.FromMinutes(4.0), startTime, "G");
-        DataNode d8 = new(4, -8, TimeSpan.FromMinutes(4.0), startTime, "H");
-        DataNode d9 = new(3, -2, TimeSpan.FromMinutes(4.0), startTime, "I");
-        DataNode d10 = new(-5, 15, TimeSpan.FromMinutes(4.0), startTime, "J");
-        DataNode d11 = new(15, -7, TimeSpan.FromMinutes(4.0), startTime, "K");
+        DataNode d8 = new(4, -8, TimeSpan.FromMinutes(13.0), startTime, "H");
+        DataNode d9 = new(3, -2, TimeSpan.FromMinutes(6.0), startTime, "I");
+        DataNode d10 = new(-5, 15, TimeSpan.FromMinutes(1.0), startTime, "J");
+        DataNode d11 = new(15, -7, TimeSpan.FromMinutes(8.0), startTime, "K");
 
 
         CentralServer X = new(0, 0);
@@ -25,7 +26,7 @@ class Program
         //List<WayPoint> dataNodes = GenerateRandomDataPoints(startTime, 50);
         //foreach(WayPoint node in dataNodes)
         //{
-        //    nodes.Add(node);
+        //    nodes.Add(node);  
         //}
 
         //IRouteGenerator routeGen = new NearestNeighbourRouteGenerator();
@@ -49,7 +50,7 @@ class Program
 
         Drone drone = new(tour, startTime);
         //timesteps vs time
-        while (drone.CurrentTime <= startTime.AddMinutes(1500))
+        while (drone.CurrentTime <= startTime.AddMinutes(10000))
         {
             drone.NextWayPoint();
         }
@@ -61,6 +62,9 @@ class Program
             {
                 file.Write(HistogramToCSVString(kvp.Value));
             }
+
+            HistogramPlotter plotter = new HistogramPlotter();
+            plotter.PlotHistogram($"{kvp.Key}_distribution.csv");
         }
     }
 

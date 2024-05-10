@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DroneSimulationBachelor.Abstractions
 {
-    public class WayPoint
+    public abstract class WayPoint
     {
         public double X { get; set; }
         public double Y { get; set; }

@@ -1,7 +1,9 @@
 ﻿using DroneSimulationBachelor.Abstractions;
+using DroneSimulationBachelor.Model;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +15,7 @@ namespace DroneSimulationBachelor.Implementations
         public List<WayPoint> GenerateRoute(List<WayPoint> dataPoints)
         {
             Graph data = new Graph(dataPoints);
+
             //create a MST T for Graph G(V,E)
             Graph T = MinimumSpanningTree(data);
 
@@ -30,6 +33,7 @@ namespace DroneSimulationBachelor.Implementations
 
             //construct a eulerian tour
             List<WayPoint> eulerianTour = HierholzerEulerianTour(H);
+
             //Make the circuit found in previous step into a Hamiltonian circuit by skipping repeated vertices (shortcutting).
             List<WayPoint> hamiltonianTour = ConvertEulerianToHamiltonianTour(eulerianTour);
 
@@ -73,7 +77,6 @@ namespace DroneSimulationBachelor.Implementations
 
         public Graph MinimumSpanningTree(Graph g)
         {
-            // Create a set to hold vertices not yet included in the MST "01"
             List<WayPoint> remainingVertices = new(g.Vertices);
 
             WayPoint currentVertex = remainingVertices.First();
@@ -83,12 +86,11 @@ namespace DroneSimulationBachelor.Implementations
             Graph mst = new Graph();
             mst.Vertices.Add(currentVertex);
 
-
             while (remainingVertices.Count > 0)
             {
                 Edge minEdge = new();
                 minEdge.Distance = Double.PositiveInfinity;
-                WayPoint closestVertex = new();
+                WayPoint closestVertex = null;
                 foreach (WayPoint vertex in mst.Vertices)
                 {
                     foreach (WayPoint candidate in remainingVertices)
@@ -103,11 +105,11 @@ namespace DroneSimulationBachelor.Implementations
                 }
 
                 mst.Edges.Add(minEdge);
+                Debug.Assert(closestVertex is not null);
                 mst.Vertices.Add(closestVertex);
-                remainingVertices.Remove(closestVertex);
+                bool b = remainingVertices.Remove(closestVertex);
 
             }
-            // Return the MST (route)
             return mst;
         }
         public Dictionary<WayPoint, WayPoint> FindMinimumWeightPerfectMatching(Graph g)
@@ -167,10 +169,11 @@ namespace DroneSimulationBachelor.Implementations
         {
             var eulerianTour = new List<WayPoint>();
 
-            var graphClone = new Graph(g.Vertices.Select(v => new WayPoint(v)).ToList());
+            Graph graphClone = new Graph(new List<WayPoint>(g.Vertices));
+
             foreach(var edge in g.Edges)
             {
-                graphClone.AddEdge(new Edge(new WayPoint(edge.VertexA), new WayPoint(edge.VertexB)));
+                graphClone.AddEdge(new Edge(edge.VertexA, edge.VertexB));
             }
 
             WayPoint startVertex = null;
