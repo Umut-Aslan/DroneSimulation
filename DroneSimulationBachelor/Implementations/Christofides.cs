@@ -37,8 +37,6 @@ namespace DroneSimulationBachelor.Implementations
             //Make the circuit found in previous step into a Hamiltonian circuit by skipping repeated vertices (shortcutting).
             List<WayPoint> hamiltonianTour = ConvertEulerianToHamiltonianTour(eulerianTour);
 
-            int toast = 0;
-
             return hamiltonianTour;
         }
 

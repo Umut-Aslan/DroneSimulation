@@ -29,7 +29,7 @@ namespace DroneSimulationBachelor
 
                     for(int i = 0; i < count; i++)
                     {
-                        reactionTimes.Add(reactionTime.TotalMinutes);
+                        reactionTimes.Add(reactionTime.TotalSeconds);
                     }
                 }
             }
