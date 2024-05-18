@@ -35,8 +35,9 @@ class Program
         //List<WayPoint> route = routeGen.GenerateRoute(nodes);
 
         List<WayPoint> points = new List<WayPoint>() { X, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11 };
-        IRouteGenerator christofides = new Christofides();
-        List<WayPoint> tour = christofides.GenerateRoute(points);
+        IRouteGenerator routeGen = new Christofides(Christofides.ModifiedMST);
+        //IRouteGenerator routeGen = new Christofides();
+        List<WayPoint> tour = routeGen.GenerateRoute(points);
 
         foreach(WayPoint vertex in tour)
         {
@@ -55,17 +56,20 @@ class Program
             drone.NextWayPoint();
         }
 
+        List<string> paths = new();
+
         foreach (var kvp in X.ReactionTimes)
         {
             //using (StreamWriter file = new($"{routeGen.GetType().Name}_{kvp.Key.Substring(0,4)}_distribution.csv"))
-            using (StreamWriter file = new($"{kvp.Key}_distribution.csv"))
+            string filename = $"{kvp.Key}_distribution_{routeGen}.csv";
+            using (StreamWriter file = new(filename))
             {
                 file.Write(HistogramToCSVString(kvp.Value));
             }
-
-            HistogramPlotter plotter = new HistogramPlotter();
-            plotter.PlotHistogram($"{kvp.Key}_distribution.csv");
+            paths.Add(filename);
         }
+        HistogramPlotter plotter = new HistogramPlotter();
+        plotter.PlotHistogram(paths.ToArray(), suffix: "_" + routeGen.ToString());
     }
 
     static string HistogramToCSVString(Dictionary<TimeSpan, uint> data)

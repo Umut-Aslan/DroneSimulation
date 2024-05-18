@@ -12,12 +12,26 @@ namespace DroneSimulationBachelor.Implementations
 {
     public class Christofides : IRouteGenerator
     {
+        public delegate Graph MSTAlgorithm(Graph g);
+
+        MSTAlgorithm mstAlgorithm;
+
+        public Christofides(MSTAlgorithm mstAlg)
+        { 
+            mstAlgorithm = mstAlg;
+        }
+
+        public Christofides()
+        {
+            mstAlgorithm = MinimumSpanningTree;
+        }
+
         public List<WayPoint> GenerateRoute(List<WayPoint> dataPoints)
         {
             Graph data = new Graph(dataPoints);
 
             //create a MST T for Graph G(V,E)
-            Graph T = MinimumSpanningTree(data);
+            Graph T = mstAlgorithm(data);
 
             //Calculate O = Set of Vertices with odd Degrees in T
             List<WayPoint> O = GetVerticesWithOddDegrees(T);
@@ -73,7 +87,7 @@ namespace DroneSimulationBachelor.Implementations
             return O;
         }
 
-        public Graph MinimumSpanningTree(Graph g)
+        public static Graph MinimumSpanningTree(Graph g)
         {
             List<WayPoint> remainingVertices = new(g.Vertices);
 
@@ -83,6 +97,64 @@ namespace DroneSimulationBachelor.Implementations
             // Initialize the MST with the starting vertex
             Graph mst = new Graph();
             mst.Vertices.Add(currentVertex);
+
+            while (remainingVertices.Count > 0)
+            {
+                Edge minEdge = new();
+                minEdge.Distance = Double.PositiveInfinity;
+                WayPoint closestVertex = null;
+                foreach (WayPoint vertex in mst.Vertices)
+                {
+                    foreach (WayPoint candidate in remainingVertices)
+                    {
+                        Edge edge = new(vertex, candidate);
+                        if (edge.Distance < minEdge.Distance)
+                        {
+                            minEdge = edge;
+                            closestVertex = candidate;
+                        }
+                    }
+                }
+
+                mst.Edges.Add(minEdge);
+                Debug.Assert(closestVertex is not null);
+                mst.Vertices.Add(closestVertex);
+                bool b = remainingVertices.Remove(closestVertex);
+
+            }
+            return mst;
+        }
+
+        public static Graph ModifiedMST(Graph g)
+        {
+            List<WayPoint> remainingVertices = new(g.Vertices);
+
+            WayPoint currentVertex = remainingVertices.First();
+            remainingVertices.Remove(currentVertex);
+
+            // Initialize the MST with the starting vertex
+            Graph mst = new Graph();
+            mst.Vertices.Add(currentVertex);
+            Edge maxEdge = new();
+            maxEdge.Distance = Double.NegativeInfinity;
+            WayPoint furthestVertex = null;
+
+            foreach (WayPoint vertex in mst.Vertices)
+            {
+                foreach(WayPoint candidate in remainingVertices)
+                {
+                    Edge edge = new(vertex, candidate);
+                    if(edge.Distance > maxEdge.Distance)
+                    {
+                        maxEdge = edge;
+                        furthestVertex = candidate;
+                    }
+                }
+            }
+
+            mst.Edges.Add(maxEdge);
+            mst.Vertices.Add(furthestVertex);
+            remainingVertices.Remove(furthestVertex);
 
             while (remainingVertices.Count > 0)
             {
@@ -278,12 +350,12 @@ namespace DroneSimulationBachelor.Implementations
                     H.AddEdge(new Edge(vertex, vertex));
                 }
             }
-
             return H;
         }
 
-
+        public override string? ToString()
+        {
+            return $"christofides_{mstAlgorithm.Method.Name}";
+        }
     }
-
-
 }
