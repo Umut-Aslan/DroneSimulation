@@ -54,8 +54,8 @@ namespace DroneSimulationBachelor
             plt.XAxis.Label("Timespan (in sec)");
             plt.YAxis2.Label("distribution");
             plt.YAxis2.Ticks(true);
-            plt.SetAxisLimits(xMin: 0, xMax: 20000, yMin: 0, yMax: 1100);
-            plt.SetAxisLimits(xMin: 0, xMax: 20000, yMin: 0, yMax: 1.1, yAxisIndex: 1);
+            plt.SetAxisLimits(xMin: 0, yMin: 0);
+            plt.SetAxisLimits(xMin: 0, yMin: 0, yMax: 1.1, yAxisIndex: 1);
 
             plt.SaveFig($"{path}.png");
         }
@@ -84,7 +84,7 @@ namespace DroneSimulationBachelor
                 {
                     csvLine = file.ReadLine();
                     string[] tokens = csvLine.Split(';');
-                    TimeSpan reactionTime = TimeSpan.Parse(tokens[0]);
+                    TimeSpan reactionTime = TimeSpan.FromSeconds(Double.Parse(tokens[0]));
                     int count = int.Parse(tokens[1]);
 
                     for (int i = 0; i < count; i++)

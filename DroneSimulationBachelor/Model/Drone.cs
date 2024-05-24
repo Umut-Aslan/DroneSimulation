@@ -31,7 +31,7 @@ namespace DroneSimulationBachelor.Model
             double distance = currWayPoint.DistanceTo(lastWayPoint);
             //speed = 1 distance unit per minute
             double speed = 1.0;
-            CurrentTime = CurrentTime.AddMinutes(distance * speed);
+            CurrentTime = CurrentTime.Add(TimeSpan.FromSeconds(distance * speed));
 
             if (currWayPoint is CentralServer)
             {
