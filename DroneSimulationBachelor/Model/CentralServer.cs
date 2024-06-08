@@ -12,7 +12,7 @@ namespace DroneSimulationBachelor.Model
     {
         public Dictionary<string, Dictionary<TimeSpan, uint>> ReactionTimes;
 
-        public CentralServer(double x, double y) : base(x, y)
+        public CentralServer(double x, double y) : base(x, y, "X")
         {
             ReactionTimes = new();
         }

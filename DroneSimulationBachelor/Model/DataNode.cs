@@ -12,11 +12,9 @@ namespace DroneSimulationBachelor.Model
         DateTime LastCollectionTime;
         DateTime LastCollectedTimeStamp;
         TimeSpan TransmissionPeriod;
-        public string ID { get; set; }
 
-        public DataNode(int x, int y, TimeSpan period, DateTime lastCollectionTime, string id) : base(x, y)
+        public DataNode(int x, int y, TimeSpan period, DateTime lastCollectionTime, string id) : base(x, y, id)
         {
-            ID = id;
             TransmissionPeriod = period;
             LastCollectionTime = lastCollectionTime;
         }

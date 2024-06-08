@@ -16,10 +16,10 @@ class Program
         double maxReactionTimeChristofide = CalculateMaxReactionTime(christofidesTourLength, christofidesTourLength - christofidesTour[0].DistanceTo(christofidesTour[1]));
         double maxReactionTimeModified = CalculateMaxReactionTime(modifiedChristofidesTourLength, modifiedChristofidesTourLength - modifiedChristofidesTour[0].DistanceTo(modifiedChristofidesTour[1]));
         Console.WriteLine($"the entire tour length of {nameof(christofidesTour)}is: {christofidesTourLength}");
-        Console.WriteLine($"the entire tour length of {nameof(modifiedChristofidesTour)}is: {modifiedChristofidesTourLength}");
+        Console.WriteLine($"the entire tour length of {nameof(modifiedChristofidesTour)}is: {modifiedChristofidesTourLength}\n");
 
         Console.WriteLine($"the maximum Reaction Time is {maxReactionTimeChristofide}");
-        Console.WriteLine($"the maximum Reaction Time is {maxReactionTimeModified}");
+        Console.WriteLine($"the maximum Reaction Time is {maxReactionTimeModified}\n");
 
         printTour(christofidesTour);
         Console.WriteLine("---------------");
@@ -98,6 +98,7 @@ class Program
         CentralServer X = new(0, 0);
         List<WayPoint> points = new List<WayPoint>() { X, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11 };
         
+        
         List<WayPoint> tour = routeGen.GenerateRoute(points);
         return tour;
     }
@@ -123,9 +124,12 @@ class Program
         {
             if(currentIndex < tour.Count - 1)
             {
-                tourLength += tour[currentIndex].DistanceTo(tour[currentIndex + 1]);
+                double distance = tour[currentIndex].DistanceTo(tour[currentIndex + 1]);
+                Console.WriteLine($"From Vertex: {tour[currentIndex]} to Vertex: {tour[currentIndex+1]} the Distance is {distance}\n");
+                tourLength += distance;
             }
         }
+        Console.WriteLine("----------------\n");
         return tourLength;
     }
 

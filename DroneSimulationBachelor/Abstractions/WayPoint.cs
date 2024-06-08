@@ -10,10 +10,11 @@ namespace DroneSimulationBachelor.Abstractions
     {
         public double X { get; set; }
         public double Y { get; set; }
+        public string ID { get; set; }
 
-        public WayPoint(double x, double y)
+        public WayPoint(double x, double y, string id)
         {
-            X = x; Y = y;
+            X = x; Y = y; ID = id;
         }
 
         public WayPoint()
@@ -49,6 +50,11 @@ namespace DroneSimulationBachelor.Abstractions
         public static bool operator !=(WayPoint? left, WayPoint? right)
         {
             return !(left == right);
+        }
+
+        public override string ToString()
+        {
+            return ID;
         }
     }
 }

@@ -4,12 +4,16 @@ public class Graph
 {
     public List<Edge> Edges { get; private set; }
     public List<WayPoint> Vertices;
-    
-
     public Graph()
     {
         Edges = new();
         Vertices = new();
+    }
+
+    public Graph(Graph toCopy)
+    {
+        Edges = new(toCopy.Edges);
+        Vertices = new(toCopy.Vertices);
     }
 
     public Graph(List<WayPoint> dataPoints)

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -30,14 +31,19 @@ namespace DroneSimulationBachelor.Implementations
         {
             Graph data = new Graph(dataPoints);
 
-            //create a MST T for Graph G(V,E)
+            //create Spanning Tree
             Graph T = mstAlgorithm(data);
+            return GenerateRoute(data, T);
+        }
+
+        public List<WayPoint> GenerateRoute(Graph fullGraph, Graph T)
+        {
 
             //Calculate O = Set of Vertices with odd Degrees in T
             List<WayPoint> O = GetVerticesWithOddDegrees(T);
 
             //Calculate Subgraph of G using only the vertices of O
-            Graph G_Sub = InduceGraph(data, O);
+            Graph G_Sub = InduceGraph(fullGraph, O);
 
             //find minimal perfect matching (regarding weight) M with odd degree
             Dictionary<WayPoint, WayPoint> M = FindMinimumWeightPerfectMatching(G_Sub);
@@ -125,6 +131,62 @@ namespace DroneSimulationBachelor.Implementations
             return mst;
         }
 
+        public static Graph EnforcedEdgeSpanningTree(Graph mst,  Edge edge)
+        {
+            Graph spanningTree = new Graph(mst);
+
+            if (spanningTree.Edges.Contains(edge)) return spanningTree;
+            
+            spanningTree.Edges.Add(edge);
+
+            List<Edge> cycle = new() { edge };
+            
+            bool foundCycle = RecursiveCycleSearch(spanningTree, cycle, edge.VertexA);
+            Debug.Assert(foundCycle);
+
+            Edge maxEdge = new();
+            maxEdge.Distance = -1;
+
+            foreach(Edge candidate in cycle)
+            {
+                if (candidate == edge) continue;
+                if (candidate.Distance > maxEdge.Distance) maxEdge = candidate;
+            }
+
+            spanningTree.RemoveEdge(maxEdge);
+
+            return spanningTree;
+        }
+
+        //the first vertex has to be in the cycle, as well as the edge, also the graph has to contain exactly 1 cycle.
+        public static bool RecursiveCycleSearch(Graph cycledSpanningTree, List<Edge> visitedEdges, WayPoint lastVertex)
+        {
+            Edge lastEdge = visitedEdges.Last();
+            WayPoint currentVertex = lastEdge.VertexA == lastVertex ? lastEdge.VertexB : lastEdge.VertexA;
+
+            if (visitedEdges.Last() == visitedEdges.First())
+            {
+                visitedEdges.Remove(visitedEdges.Last());
+                return true;
+            }
+
+            List<Edge> possibleEdges = cycledSpanningTree.Edges.FindAll(
+                (edge) => edge.VertexA == currentVertex || edge.VertexB == currentVertex
+            );
+
+            foreach(Edge edge in possibleEdges )
+            {
+                if (edge == lastEdge) continue;
+
+                visitedEdges.Add(edge);
+                if (RecursiveCycleSearch(cycledSpanningTree, visitedEdges, currentVertex))
+                    return true;
+
+                visitedEdges.RemoveAt(visitedEdges.Count - 1);
+            }
+            return false;
+        }
+
         public static Graph ModifiedMST(Graph g)
         {
             List<WayPoint> remainingVertices = new(g.Vertices);
@@ -151,6 +213,8 @@ namespace DroneSimulationBachelor.Implementations
                     }
                 }
             }
+
+            Console.WriteLine($"The longest vertex is {maxEdge.VertexA.DistanceTo(maxEdge.VertexB)}\n");
 
             mst.Edges.Add(maxEdge);
             mst.Vertices.Add(furthestVertex);
