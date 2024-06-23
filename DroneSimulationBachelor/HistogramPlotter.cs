@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,13 +14,13 @@ namespace DroneSimulationBachelor
     public class HistogramPlotter
     {
 
-        public void PlotHistogram(string path)
+        public void PlotReactionTimeHistogram(string path)
         {
             List<double> reactionTimes = extractReactionTimes(path);
-            GeneratePlotPicture(path,reactionTimes);
+            GenerateReactionTimePlotPicture(path,reactionTimes);
         }
 
-        private static void GeneratePlotPicture(string path, List<double> reactionTimes, int binCount = 50)
+        private static void GenerateReactionTimePlotPicture(string path, List<double> reactionTimes, int binCount = 50)
         {
             var plt = new Plot();
 
@@ -60,17 +61,58 @@ namespace DroneSimulationBachelor
             plt.SaveFig($"{path}.png");
         }
 
-        public void PlotHistogram(string[] paths, string suffix = "")
+        public void PlotMultipleReactionTImeHistogram(string[] paths, string suffix = "")
         {
             List<double> allReactionTimes = new();
 
             foreach(string path in paths)
             {
                 List<double> reactionTimes = extractReactionTimes(path);
-                GeneratePlotPicture(path, reactionTimes);
+                GenerateReactionTimePlotPicture(path, reactionTimes);
                 allReactionTimes.AddRange(reactionTimes);
             }
-            GeneratePlotPicture($"Accumulated_Distribution{suffix}", allReactionTimes, 50);
+            GenerateReactionTimePlotPicture($"Accumulated_Distribution{suffix}", allReactionTimes, 50);
+        }
+
+        public void PlotMaxReactionTimesPicture(double[] maxReactionTimes, int binCount)
+        {
+            var plt = new Plot();
+
+            double min = maxReactionTimes.Min();
+            double max = maxReactionTimes.Max();
+
+            ScottPlot.Statistics.Histogram hist = new(min, max, binCount);
+            hist.AddRange(maxReactionTimes);
+
+            double barWidth = hist.BinSize * 1.2;
+            plt.PlotBar(hist.Bins, hist.Counts, barWidth: barWidth);
+
+            // display vertical lines at points of interest
+            var stats = new ScottPlot.Statistics.BasicStats(maxReactionTimes);
+            plt.AddVerticalLine(stats.Mean, Color.Black, 2, LineStyle.Solid, $"mean: {stats.Mean:#.}");
+            plt.AddVerticalLine(stats.Mean - stats.StDev, Color.Black, 2, LineStyle.Dash, $"1 SD: {stats.StDev:#.}");
+            plt.AddVerticalLine(stats.Mean + stats.StDev, Color.Black, 2, LineStyle.Dash);
+            plt.AddVerticalLine(stats.Mean - stats.StDev * 2, Color.Black, 2, LineStyle.Dot, $"2 SD: {stats.StDev * 2:#.}");
+            plt.AddVerticalLine(stats.Mean + stats.StDev * 2, Color.Black, 2, LineStyle.Dot);
+            plt.AddVerticalLine(stats.Min, Color.Gray, 1, LineStyle.Dash, "min/max");
+            plt.AddVerticalLine(stats.Max, Color.Gray, 1, LineStyle.Dash);
+            plt.Legend(location: Alignment.UpperRight);
+
+            // display histogram probability curve as a line plot
+            var funcPlot = plt.AddFunction(hist.GetProbabilityCurve(maxReactionTimes), Color.DarkOrange, 2, LineStyle.Solid);
+            funcPlot.YAxisIndex = 1;
+            //plt.AddScatterLines(hist.Bins,hist.Counts, Color.Magenta, 2, LineStyle.Solid);
+
+
+            plt.Title("Max Reaction Times");
+            plt.YAxis.Label("Count (#)");
+            plt.XAxis.Label("Max Reaction Time (in sec)");
+            plt.YAxis2.Label("distribution");
+            plt.YAxis2.Ticks(true);
+            plt.SetAxisLimits(yMax: hist.Counts.Max() * 1.1, yAxisIndex: 0);
+            plt.SetAxisLimits(yMin: 0, yMax: 1.1, yAxisIndex: 1);
+
+            plt.SaveFig($"MaximumReactionTimes.png");
         }
 
         private static List<double> extractReactionTimes(string path)

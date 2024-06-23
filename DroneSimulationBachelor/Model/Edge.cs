@@ -18,16 +18,15 @@ public class Edge
     {
     }
 
-    //public override bool Equals(object? other)
-    //{
-    //    if (other is null) return false;
-    //    if (other is not Edge) return false;
+    public WayPoint GetOtherVertex(WayPoint vertex)
+    {
+        return vertex == VertexA ? VertexB : VertexA;
+    }
 
-    //    Edge otherEdge = (Edge)other!;
-
-    //    return (this.VertexA == otherEdge.VertexA && this.VertexB == otherEdge.VertexB) ||
-    //        (this.VertexA == otherEdge.VertexB && this.VertexB == otherEdge.VertexA);
-    //}
+    public bool Contains(WayPoint vertex)
+    {
+        return vertex == VertexA || vertex == VertexB;
+    }
 
     public override bool Equals(object obj)
     {

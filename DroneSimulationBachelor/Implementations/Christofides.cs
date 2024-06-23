@@ -1,10 +1,16 @@
 ﻿using DroneSimulationBachelor.Abstractions;
 using DroneSimulationBachelor.Model;
 using Microsoft.Win32.SafeHandles;
+using ScottPlot.Control;
+using ScottPlot.MarkerShapes;
+using ScottPlot.Palettes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -164,7 +170,9 @@ namespace DroneSimulationBachelor.Implementations
             Edge lastEdge = visitedEdges.Last();
             WayPoint currentVertex = lastEdge.VertexA == lastVertex ? lastEdge.VertexB : lastEdge.VertexA;
 
-            if (visitedEdges.Last() == visitedEdges.First())
+            Edge firstEdge = visitedEdges.First();
+            bool firstEdgesContainsCurrentVertex = currentVertex == firstEdge.VertexA || currentVertex == firstEdge.VertexB;
+            if (firstEdgesContainsCurrentVertex && visitedEdges.Count > 1)
             {
                 visitedEdges.Remove(visitedEdges.Last());
                 return true;
@@ -174,9 +182,9 @@ namespace DroneSimulationBachelor.Implementations
                 (edge) => edge.VertexA == currentVertex || edge.VertexB == currentVertex
             );
 
-            foreach(Edge edge in possibleEdges )
+            foreach(Edge edge in possibleEdges)
             {
-                if (edge == lastEdge) continue;
+                if (edge == lastEdge) continue; //to not go back immidately
 
                 visitedEdges.Add(edge);
                 if (RecursiveCycleSearch(cycledSpanningTree, visitedEdges, currentVertex))
@@ -246,6 +254,157 @@ namespace DroneSimulationBachelor.Implementations
             }
             return mst;
         }
+
+        public static Graph FindMinimumMatching(Graph g, Graph matching)
+        {
+            Graph matching_star = new();
+            List<WayPoint> path = FindAugmentingPath();
+            if(path.Count != 0)
+            {
+                Graph augmentedPath = AugmentPath(matching_star, path);
+                return FindMinimumMatching(g, augmentedPath);
+            }
+            else
+            {
+                return matching_star;
+            }
+        }
+
+        private static Graph AugmentPath(Graph matching_star, List<WayPoint> path)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static List<WayPoint> FindAugmentingPath(Graph g, Graph matching)
+        {
+            HashSet<WayPoint> exposedVertices = new(g.Vertices);
+            foreach (Edge edge in matching.Edges)
+            {
+                exposedVertices.Remove(edge.VertexA);
+                exposedVertices.Remove(edge.VertexB);
+            }
+            Forest F = new Forest();
+            F.AddRoots(exposedVertices);
+
+            HashSet<Edge> unmarkedEdgesInG = new(g.Edges);
+
+            WayPoint v = F.GetUnmarkedVertexWithEvenDepth();
+
+            while (v != null)
+            {
+                Edge e = GetUnmarkedEdgeOf(v, unmarkedEdgesInG);
+                while (e != null)
+                {
+                    WayPoint w = e.GetOtherVertex(v);
+                    if (!F.Vertices.Contains(w))
+                    {
+                        WayPoint x = GetMatchedVertexTo(w, matching);
+                        F.AddConnectedEdge(v, w);
+                        F.AddConnectedEdge(w, x);
+                    }
+                    else
+                    {
+                        if (F.GetDepth(w) % 2 == 0)
+                        {
+                            if (F.GetRoot(v) != F.GetRoot(w))
+                            {
+                                List<WayPoint> augmentingPath = GenerateAugmentingPath(v,w, F);
+                                return augmentingPath;
+                            }
+                            else
+                            {
+                                Graph b = GenerateBlossom(v,w, F);
+                                Graph g_prime = new Graph(g);
+                                BlossomContraction replacementVertexG = g_prime.Contract(b);
+                                Graph m_prime = new Graph(matching);
+                                BlossomContraction replacementVertexM = m_prime.Contract(b);
+                                List<WayPoint> p_prime = FindAugmentingPath(g_prime, m_prime);
+                                List<WayPoint> p = LiftToGraph(matching, replacementVertexG, p_prime, b);
+                                return p;
+                            }
+                        }
+                    }
+                    unmarkedEdgesInG.Remove(e);
+                    e = GetUnmarkedEdgeOf(v, unmarkedEdgesInG);
+                }
+                F.MarkVertex(v);
+                v = F.GetUnmarkedVertexWithEvenDepth();
+            }
+            return null;
+        }
+
+        private static List<WayPoint> LiftToGraph(Graph matching, BlossomContraction replacementVertexG, List<WayPoint> p_prime, Graph b)
+        {
+            List<WayPoint> liftedPath = new();
+
+            foreach(WayPoint vertex in p_prime)
+            {
+                if(vertex == replacementVertexG)
+                {
+
+                }
+                else
+                {
+                    liftedPath.Add(vertex);
+                }
+            }
+        }
+
+        private static Graph GenerateBlossom(WayPoint v, WayPoint w, Forest F)
+        {
+            Graph blossom = new();
+
+            List<WayPoint> pathToRootOfV = F.GetPathToRoot(v);
+            List<WayPoint> pathToRootOfW = F.GetPathToRoot(w);
+
+            WayPoint lastOfV = pathToRootOfV.Last();
+            WayPoint lastOfW = pathToRootOfW.Last();
+
+            while (pathToRootOfV.Last() == pathToRootOfW.Last())
+            {
+                lastOfV = pathToRootOfV.Last();
+                lastOfW = pathToRootOfW.Last();
+
+                pathToRootOfV.Remove(lastOfV);
+                pathToRootOfW.Remove(lastOfW);
+            }
+
+            pathToRootOfV.Add(lastOfV);
+            pathToRootOfW.Add(lastOfW);
+
+            List<WayPoint> fullPath = pathToRootOfW.Reversed();
+            fullPath.AddRange(pathToRootOfV);
+
+            for(int i = 0; i < fullPath.Count-1; i++)
+            {
+                blossom.AddEdge(new Edge(fullPath[i], fullPath[i + 1]));
+            }
+
+            return blossom;
+        }
+
+        private static List<WayPoint> GenerateAugmentingPath(WayPoint v, WayPoint w, Forest f)
+        {
+            List<WayPoint> augmentingPath = new();
+            augmentingPath.AddRange(f.GetPathToRoot(v).Reverse<WayPoint>());
+            augmentingPath.AddRange(f.GetPathToRoot(w));
+            return augmentingPath;
+        }
+
+        private static WayPoint GetMatchedVertexTo(WayPoint w, Graph matching)
+        {
+            return matching.Edges.Find((Edge e) => e.Contains(w)).GetOtherVertex(w);
+        }
+
+        private static Edge GetUnmarkedEdgeOf(WayPoint v, HashSet<Edge> unmarkedEdges)
+        {
+            foreach(Edge e in unmarkedEdges)
+            {
+                if (e.VertexA == v || e.VertexB == v) return e;
+            }
+            return null;
+        }
+
         public Dictionary<WayPoint, WayPoint> FindMinimumWeightPerfectMatching(Graph g)
         {
 
@@ -287,13 +446,7 @@ namespace DroneSimulationBachelor.Implementations
                         matching[neighbour] = vertex;
                         return true;
                     }
-                    if (visited.Contains(neighbour)) continue;
-                    //if (AugmentMatching(matching[neighbour], g, matching, visited))
-                    //{
-                    //    matching[vertex] = neighbour;
-                    //    matching[neighbour] = vertex;
-                    //    return true;
-                    //}
+                    //if (visited.Contains(neighbour)) continue;
                 }
             }
             return false;

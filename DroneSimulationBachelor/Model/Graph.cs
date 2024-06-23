@@ -1,4 +1,5 @@
 ﻿using DroneSimulationBachelor.Abstractions;
+using DroneSimulationBachelor.Implementations;
 
 public class Graph
 {
@@ -34,11 +35,13 @@ public class Graph
         }
     }
 
-    public void AddEdge(Edge edge)
+    public virtual void AddEdge(Edge edge)
     {
         if(!Edges.Contains(edge))
         {
             Edges.Add(edge);
+            if(!Vertices.Contains(edge.VertexA)) Vertices.Add(edge.VertexA);
+            if(!Vertices.Contains(edge.VertexB)) Vertices.Add(edge.VertexB);
         }
     }
 
@@ -68,5 +71,25 @@ public class Graph
     public int GetDegree(WayPoint vertex)
     {
         return Edges.Count(edge => edge.VertexA == vertex || edge.VertexB == vertex);
+    }
+
+    public BlossomContraction Contract(Graph blossom)
+    {
+        BlossomContraction v_b = new BlossomContraction();
+
+        foreach(WayPoint vertex in blossom.Vertices)
+        {
+            Vertices.Remove(vertex);
+            foreach (Edge edge in Edges)
+            {
+                if (edge.Contains(vertex))
+                {
+                    if(!blossom.Edges.Contains(edge))
+                        AddEdge(new Edge(v_b, vertex));
+                    RemoveEdge(edge);
+                }
+            }
+        }
+        return v_b;
     }
 }
