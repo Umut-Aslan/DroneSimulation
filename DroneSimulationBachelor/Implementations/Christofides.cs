@@ -42,7 +42,7 @@ namespace DroneSimulationBachelor.Implementations
             return GenerateRoute(data, T);
         }
 
-        public List<WayPoint> GenerateRoute(Graph fullGraph, Graph T)
+        public List<WayPoint> GenerateRoute(Graph fullGraph, Graph T, Edge enforcedEdge = null)
         {
 
             //Calculate O = Set of Vertices with odd Degrees in T
@@ -52,18 +52,53 @@ namespace DroneSimulationBachelor.Implementations
             Graph G_Sub = InduceGraph(fullGraph, O);
 
             //find minimal perfect matching (regarding weight) M with odd degree
-            Dictionary<WayPoint, WayPoint> M = FindMinimumWeightPerfectMatching(G_Sub);
+            Dictionary<WayPoint, WayPoint> M = FindMinimumWeightPerfectMatching(fullGraph, G_Sub);
 
             //Combine the edges of M and T to form a connected multigraph H in which each vertex has even degree.
-            Graph H = CombineMatchingAndMSTwithEvenDegree(M, T);
+            Graph H = CombineMatchingAndSpanningTree(M, T);
 
             //construct a eulerian tour
             List<WayPoint> eulerianTour = HierholzerEulerianTour(H);
+
+            eulerianTour = ChangeStartingPoint(eulerianTour, enforcedEdge);
 
             //Make the circuit found in previous step into a Hamiltonian circuit by skipping repeated vertices (shortcutting).
             List<WayPoint> hamiltonianTour = ConvertEulerianToHamiltonianTour(eulerianTour);
 
             return hamiltonianTour;
+        }
+
+        private List<WayPoint> ChangeStartingPoint(List<WayPoint> eulerianTour, Edge enforcedEdge)
+        {
+            if (enforcedEdge == null) return eulerianTour;
+            int length = eulerianTour.Count-1;
+
+            for(int i = 0; i < length; i++)
+            {
+                Edge currentEdge = new Edge(eulerianTour[i], eulerianTour[(i+1)]);
+                if (currentEdge == enforcedEdge)
+                {
+                    if(eulerianTour[i] is CentralServer)
+                    {
+                        eulerianTour.RemoveRange(0, i);
+                        return eulerianTour;
+                    }
+                    else if (eulerianTour[i+1] is CentralServer)
+                    {
+                        eulerianTour.Add(eulerianTour[i + 1]);
+                        eulerianTour.RemoveRange(0, i+1);
+                        eulerianTour.Reverse();
+                        return eulerianTour;
+                    }
+                    else
+                    {
+                        Debug.Assert(false);
+                    }
+                }
+                eulerianTour.Add(eulerianTour[i + 1]);
+            }
+            Debug.Assert(false);
+            return eulerianTour;
         }
 
         private Graph InduceGraph(Graph OriginalGraph, List<WayPoint> SetOfVertices)
@@ -141,6 +176,7 @@ namespace DroneSimulationBachelor.Implementations
         {
             Graph spanningTree = new Graph(mst);
 
+            //Falls die Kante vorhanden aber nicht als erstes drin ist, so muss diese Kante zuerst vorkommen und anschließend der restliche Spannbaum aufgebaut werden.
             if (spanningTree.Edges.Contains(edge)) return spanningTree;
             
             spanningTree.Edges.Add(edge);
@@ -222,7 +258,7 @@ namespace DroneSimulationBachelor.Implementations
                 }
             }
 
-            Console.WriteLine($"The longest vertex is {maxEdge.VertexA.DistanceTo(maxEdge.VertexB)}\n");
+            //Console.WriteLine($"The longest vertex is {maxEdge.VertexA.DistanceTo(maxEdge.VertexB)}\n");
 
             mst.Edges.Add(maxEdge);
             mst.Vertices.Add(furthestVertex);
@@ -255,249 +291,146 @@ namespace DroneSimulationBachelor.Implementations
             return mst;
         }
 
-        public static Graph FindMinimumMatching(Graph g, Graph matching)
+        public Dictionary<WayPoint, WayPoint> FindMinimumWeightPerfectMatching(Graph fullGraph, Graph spanningTreeInducedGraph)
         {
-            Graph matching_star = new();
-            List<WayPoint> path = FindAugmentingPath();
-            if(path.Count != 0)
-            {
-                Graph augmentedPath = AugmentPath(matching_star, path);
-                return FindMinimumMatching(g, augmentedPath);
-            }
-            else
-            {
-                return matching_star;
-            }
-        }
-
-        private static Graph AugmentPath(Graph matching_star, List<WayPoint> path)
-        {
-            throw new NotImplementedException();
-        }
-
-        private static List<WayPoint> FindAugmentingPath(Graph g, Graph matching)
-        {
-            HashSet<WayPoint> exposedVertices = new(g.Vertices);
-            foreach (Edge edge in matching.Edges)
-            {
-                exposedVertices.Remove(edge.VertexA);
-                exposedVertices.Remove(edge.VertexB);
-            }
-            Forest F = new Forest();
-            F.AddRoots(exposedVertices);
-
-            HashSet<Edge> unmarkedEdgesInG = new(g.Edges);
-
-            WayPoint v = F.GetUnmarkedVertexWithEvenDepth();
-
-            while (v != null)
-            {
-                Edge e = GetUnmarkedEdgeOf(v, unmarkedEdgesInG);
-                while (e != null)
-                {
-                    WayPoint w = e.GetOtherVertex(v);
-                    if (!F.Vertices.Contains(w))
-                    {
-                        WayPoint x = GetMatchedVertexTo(w, matching);
-                        F.AddConnectedEdge(v, w);
-                        F.AddConnectedEdge(w, x);
-                    }
-                    else
-                    {
-                        if (F.GetDepth(w) % 2 == 0)
-                        {
-                            if (F.GetRoot(v) != F.GetRoot(w))
-                            {
-                                List<WayPoint> augmentingPath = GenerateAugmentingPath(v,w, F);
-                                return augmentingPath;
-                            }
-                            else
-                            {
-                                Graph b = GenerateBlossom(v,w, F);
-                                Graph g_prime = new Graph(g);
-                                BlossomContraction replacementVertexG = g_prime.Contract(b);
-                                Graph m_prime = new Graph(matching);
-                                BlossomContraction replacementVertexM = m_prime.Contract(b);
-                                List<WayPoint> p_prime = FindAugmentingPath(g_prime, m_prime);
-                                List<WayPoint> p = LiftToGraph(matching, replacementVertexG, p_prime, b);
-                                return p;
-                            }
-                        }
-                    }
-                    unmarkedEdgesInG.Remove(e);
-                    e = GetUnmarkedEdgeOf(v, unmarkedEdgesInG);
-                }
-                F.MarkVertex(v);
-                v = F.GetUnmarkedVertexWithEvenDepth();
-            }
-            return null;
-        }
-
-        private static List<WayPoint> LiftToGraph(Graph matching, BlossomContraction replacementVertexG, List<WayPoint> p_prime, Graph b)
-        {
-            List<WayPoint> liftedPath = new();
-
-            foreach(WayPoint vertex in p_prime)
-            {
-                if(vertex == replacementVertexG)
-                {
-
-                }
-                else
-                {
-                    liftedPath.Add(vertex);
-                }
-            }
-        }
-
-        private static Graph GenerateBlossom(WayPoint v, WayPoint w, Forest F)
-        {
-            Graph blossom = new();
-
-            List<WayPoint> pathToRootOfV = F.GetPathToRoot(v);
-            List<WayPoint> pathToRootOfW = F.GetPathToRoot(w);
-
-            WayPoint lastOfV = pathToRootOfV.Last();
-            WayPoint lastOfW = pathToRootOfW.Last();
-
-            while (pathToRootOfV.Last() == pathToRootOfW.Last())
-            {
-                lastOfV = pathToRootOfV.Last();
-                lastOfW = pathToRootOfW.Last();
-
-                pathToRootOfV.Remove(lastOfV);
-                pathToRootOfW.Remove(lastOfW);
-            }
-
-            pathToRootOfV.Add(lastOfV);
-            pathToRootOfW.Add(lastOfW);
-
-            List<WayPoint> fullPath = pathToRootOfW.Reversed();
-            fullPath.AddRange(pathToRootOfV);
-
-            for(int i = 0; i < fullPath.Count-1; i++)
-            {
-                blossom.AddEdge(new Edge(fullPath[i], fullPath[i + 1]));
-            }
-
-            return blossom;
-        }
-
-        private static List<WayPoint> GenerateAugmentingPath(WayPoint v, WayPoint w, Forest f)
-        {
-            List<WayPoint> augmentingPath = new();
-            augmentingPath.AddRange(f.GetPathToRoot(v).Reverse<WayPoint>());
-            augmentingPath.AddRange(f.GetPathToRoot(w));
-            return augmentingPath;
-        }
-
-        private static WayPoint GetMatchedVertexTo(WayPoint w, Graph matching)
-        {
-            return matching.Edges.Find((Edge e) => e.Contains(w)).GetOtherVertex(w);
-        }
-
-        private static Edge GetUnmarkedEdgeOf(WayPoint v, HashSet<Edge> unmarkedEdges)
-        {
-            foreach(Edge e in unmarkedEdges)
-            {
-                if (e.VertexA == v || e.VertexB == v) return e;
-            }
-            return null;
-        }
-
-        public Dictionary<WayPoint, WayPoint> FindMinimumWeightPerfectMatching(Graph g)
-        {
-
             var matching = new Dictionary<WayPoint, WayPoint>();
-            foreach(var vertex in g.Vertices)
+            const string BlossomVExe = "BlossomV.exe";
+            const string InputFile = "SpanningTree_input.txt";
+            const string OutputFile = "PM_out.txt";
+
+            WriteGraphToBlossom4(fullGraph, spanningTreeInducedGraph, InputFile);
+
+            ProcessStartInfo startInfo = new();
+            startInfo.FileName = BlossomVExe;
+            startInfo.Arguments = $"-e {InputFile} -w {OutputFile}";
+
+            using (Process process = Process.Start(startInfo))
             {
-                if (!matching.ContainsKey(vertex))
-                {
-                    AugmentMatching(vertex, g, matching, new HashSet<WayPoint>());
-                }
+                process.WaitForExit();
             }
 
-            var perfectMatching = new Dictionary<WayPoint, WayPoint>();
-            
-            foreach(var vertex in g.Vertices)
+            string[] lines = File.ReadAllLines(OutputFile);
+
+            foreach (string line in lines)
             {
-                if (matching.ContainsKey(vertex))
-                {
-                    var matchedVertex = matching[vertex];
-                    perfectMatching[vertex] = matchedVertex;
-                    perfectMatching[matchedVertex] = vertex;
-                }
+                if (line == lines[0]) continue;
+                string[] tokens = line.Split(" ");
+                Debug.Assert(tokens.Length == 2);
+                int v1 = int.Parse(tokens[0]);
+                int v2 = int.Parse(tokens[1]);
+                matching[spanningTreeInducedGraph.Vertices.ElementAt(v1)] = spanningTreeInducedGraph.Vertices.ElementAt(v2);
             }
 
-            return perfectMatching;
+            return matching;
         }
 
-        private bool AugmentMatching(WayPoint vertex, Graph g, Dictionary<WayPoint, WayPoint> matching, HashSet<WayPoint> visited)
+        private void WriteGraphToBlossom4(Graph fullGraph, Graph spanningTree, string inputFile)
         {
-            visited.Add(vertex);
-            foreach (var edge in g.Edges)
+            using (StreamWriter file = new(inputFile))
             {
-                if (edge.VertexA == vertex)
+                file.WriteLine($"{spanningTree.Vertices.Count} {spanningTree.Edges.Count}");
+                foreach(Edge edge in spanningTree.Edges)
                 {
-                    var neighbour = edge.VertexB;
-                    if (!matching.ContainsKey(neighbour))
-                    {
-                        matching[vertex] = neighbour;
-                        matching[neighbour] = vertex;
-                        return true;
-                    }
-                    //if (visited.Contains(neighbour)) continue;
+                    WayPoint vertexA = edge.VertexA;
+                    WayPoint vertexB = edge.VertexB;
+                    List<WayPoint> vertices = spanningTree.Vertices;
+                    string line = $"{vertices.IndexOf(vertexA)} {vertices.IndexOf(vertexB)} {(int)(vertexA.DistanceTo(vertexB) * 100)}";
+                    file.WriteLine(line);
                 }
             }
-            return false;
         }
-    
+
         private List<WayPoint> HierholzerEulerianTour(Graph g)
         {
             var eulerianTour = new List<WayPoint>();
 
-            Graph graphClone = new Graph(new List<WayPoint>(g.Vertices));
+            // Step 1: Create a copy of the graph
+            Graph graphClone = new Graph(g);
 
-            foreach(var edge in g.Edges)
+            // Step 2: Ensure every vertex has an even degree
+            foreach (var vertex in graphClone.Vertices)
             {
-                graphClone.AddEdge(new Edge(edge.VertexA, edge.VertexB));
-            }
-
-            WayPoint startVertex = null;
-            foreach(var vertex in g.Vertices)
-            {
-                if(graphClone.GetDegree(vertex) % 2 != 0)
+                if (graphClone.GetDegree(vertex) % 2 != 0)
                 {
-                    startVertex = vertex;
-                    break;
+                    throw new InvalidOperationException("The graph does not have all vertices with even degree, thus it cannot have an Eulerian circuit.");
                 }
             }
 
-            if(startVertex != null)
+            // Step 3: Choose a start vertex with a non-zero degree
+            WayPoint startVertex = graphClone.Vertices.FirstOrDefault(v => graphClone.GetDegree(v) > 0);
+
+            if (startVertex != null)
             {
                 var stack = new Stack<WayPoint>();
                 stack.Push(startVertex);
 
-                while(stack.Count > 0)
+                while (stack.Count > 0)
                 {
                     var currentVertex = stack.Peek();
                     var nextVertex = graphClone.GetAdjacentVertex(currentVertex);
 
-                    if(nextVertex == null)
+                    if (nextVertex == null)
                     {
                         eulerianTour.Add(stack.Pop());
                     }
                     else
                     {
-                        graphClone.RemoveEdge(new Edge(currentVertex, nextVertex));
+                        //graphClone.RemoveEdge(new Edge(currentVertex, nextVertex));
                         stack.Push(nextVertex);
                     }
                 }
 
                 eulerianTour.Reverse();
             }
+            else
+            {
+                throw new InvalidOperationException("The graph is empty or has no edges.");
+            }
+
             return eulerianTour;
-        }       
+        }
+
+        //private List<WayPoint> HierholzerEulerianTour(Graph g)
+        //{
+        //    var eulerianTour = new List<WayPoint>();
+
+        //    Graph graphClone = new Graph(g);
+
+        //    WayPoint startVertex = null;
+        //    foreach(var vertex in g.Vertices)
+        //    {
+        //        if(graphClone.GetDegree(vertex) % 2 != 0)
+        //        {
+        //            startVertex = vertex;
+        //            break;
+        //        }
+        //    }
+
+        //    if(startVertex != null)
+        //    {
+        //        var stack = new Stack<WayPoint>();
+        //        stack.Push(startVertex);
+
+        //        while(stack.Count > 0)
+        //        {
+        //            var currentVertex = stack.Peek();
+        //            var nextVertex = graphClone.GetAdjacentVertex(currentVertex);
+
+        //            if(nextVertex == null)
+        //            {
+        //                eulerianTour.Add(stack.Pop());
+        //            }
+        //            else
+        //            {
+        //                graphClone.RemoveEdge(new Edge(currentVertex, nextVertex));
+        //                stack.Push(nextVertex);
+        //            }
+        //        }
+
+        //        eulerianTour.Reverse();
+        //    }
+        //    return eulerianTour;
+        //}       
 
         public List<WayPoint> ConvertEulerianToHamiltonianTour(List<WayPoint> eulerianTour)
         {
@@ -526,17 +459,9 @@ namespace DroneSimulationBachelor.Implementations
             return hamiltonianTour;
         }
 
-        private Graph CombineMatchingAndMSTwithEvenDegree(Dictionary<WayPoint, WayPoint> matching, Graph MST)
+        private Graph CombineMatchingAndSpanningTree(Dictionary<WayPoint, WayPoint> matching, Graph MST)
         {
-            Graph H = new Graph();
-
-            // Step 1: Create a copy of the minimum spanning tree
-            foreach (var edge in MST.Edges)
-            {
-                H.AddEdge(edge);
-                H.Vertices.Add(edge.VertexA); // Add vertices from MST
-                H.Vertices.Add(edge.VertexB);
-            }
+            Graph H = new Graph(MST);
 
             // Step 2: Add matching edges to the copy of MST
             foreach (var edge in matching)
@@ -544,9 +469,7 @@ namespace DroneSimulationBachelor.Implementations
                 WayPoint vertexA = edge.Key;
                 WayPoint vertexB = edge.Value;
 
-                H.AddEdge(new Edge(vertexA, vertexB));
-                H.Vertices.Add(vertexA); // Add vertices from matching
-                H.Vertices.Add(vertexB);
+                H.AddEdgeMultiGraph(new Edge(vertexA, vertexB));
             }
 
             // Step 3: Track the degree of each vertex in H
@@ -560,12 +483,7 @@ namespace DroneSimulationBachelor.Implementations
             // Step 4: Ensure each vertex has even degree
             foreach (var vertex in vertexDegrees.Keys.ToList())
             {
-                int degree = vertexDegrees[vertex];
-                if (degree % 2 != 0)
-                {
-                    // Add an edge to make the degree even (e.g., to itself)
-                    H.AddEdge(new Edge(vertex, vertex));
-                }
+                Debug.Assert(vertexDegrees[vertex] % 2 == 0);
             }
             return H;
         }

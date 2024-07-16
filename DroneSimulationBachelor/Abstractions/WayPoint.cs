@@ -1,31 +1,37 @@
-﻿using System;
+﻿using DroneSimulationBachelor.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace DroneSimulationBachelor.Abstractions
 {
+    [JsonDerivedType(typeof(DataNode), "DataNode")]
+    [JsonDerivedType(typeof(CentralServer), "CentralServer")]
     public abstract class WayPoint
     {
         public double X { get; set; }
         public double Y { get; set; }
         public string ID { get; set; }
 
+        [JsonConstructor]
         public WayPoint(double x, double y, string id)
         {
             X = x; Y = y; ID = id;
-        }
-
-        public WayPoint()
-        {
-            
         }
 
         public WayPoint(WayPoint toCopy)
         {
             this.X = toCopy.X;
             this.Y = toCopy.Y;
+        }
+
+        public WayPoint()
+        {
+
         }
 
         public double DistanceTo(WayPoint other)

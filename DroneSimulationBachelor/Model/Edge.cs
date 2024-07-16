@@ -1,10 +1,14 @@
 ﻿using DroneSimulationBachelor.Abstractions;
 using System.Security;
+using System.Text.Json.Serialization;
 
 public class Edge
 {
+    [JsonPropertyName("vertexA")]
     public WayPoint VertexA { get; set; }
+    [JsonPropertyName("vertexB")]
     public WayPoint VertexB { get; set; }
+    [JsonPropertyName("distance")]
     public double Distance { get; set; }
 
     public Edge(WayPoint vertexA, WayPoint vertexB)

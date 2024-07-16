@@ -61,7 +61,7 @@ namespace DroneSimulationBachelor
             plt.SaveFig($"{path}.png");
         }
 
-        public void PlotMultipleReactionTImeHistogram(string[] paths, string suffix = "")
+        public void PlotMultipleReactionTimeHistogram(string[] paths, string suffix = "")
         {
             List<double> allReactionTimes = new();
 
@@ -74,7 +74,7 @@ namespace DroneSimulationBachelor
             GenerateReactionTimePlotPicture($"Accumulated_Distribution{suffix}", allReactionTimes, 50);
         }
 
-        public void PlotMaxReactionTimesPicture(double[] maxReactionTimes, int binCount)
+        public void PlotMaxReactionTimesPicture(double[] maxReactionTimes, int binCount, string path = ".")
         {
             var plt = new Plot();
 
@@ -112,7 +112,7 @@ namespace DroneSimulationBachelor
             plt.SetAxisLimits(yMax: hist.Counts.Max() * 1.1, yAxisIndex: 0);
             plt.SetAxisLimits(yMin: 0, yMax: 1.1, yAxisIndex: 1);
 
-            plt.SaveFig($"MaximumReactionTimes.png");
+            plt.SaveFig(Path.Combine(path, $"MaximumReactionTimes.png"));
         }
 
         private static List<double> extractReactionTimes(string path)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using DroneSimulationBachelor.Abstractions;
 
@@ -10,8 +11,10 @@ namespace DroneSimulationBachelor.Model
 {
     public class CentralServer : WayPoint
     {
+        [JsonIgnore]
         public Dictionary<string, Dictionary<TimeSpan, uint>> ReactionTimes;
 
+        [JsonConstructor]
         public CentralServer(double x, double y) : base(x, y, "X")
         {
             ReactionTimes = new();
