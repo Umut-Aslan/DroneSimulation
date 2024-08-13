@@ -17,9 +17,9 @@ namespace DroneSimulationBachelor.Model
 
         public TimeSpan TransmissionPeriod { get; set; }
 
-        public DataNode(int X, int Y, string ID, TimeSpan TransmissionPeriod) : base(X, Y, ID) 
+        public DataNode(int X, int Y, string ID, TimeSpan period) : base(X, Y, ID) 
         {
-            TransmissionPeriod = TransmissionPeriod;
+            TransmissionPeriod = period;
         }
 
         public DataNode()

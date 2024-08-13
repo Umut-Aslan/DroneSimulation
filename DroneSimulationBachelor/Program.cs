@@ -4,20 +4,24 @@ using DroneSimulationBachelor.Implementations;
 using DroneSimulationBachelor.Model;
 using ScottPlot.Statistics.Interpolation;
 using System;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.ExceptionServices;
 using static DroneSimulationBachelor.Implementations.Christofides;
 
 class Program
 {
+    static Dictionary<string, int> BestSolutionCount = new();
+
     private delegate List<WayPoint> WayPointGenerator();
 
     static void Main(string[] args)
     {
         List<WayPointGenerator> dataGenerators = new() {
-            InitialiseDummyDataSet_A, 
-            InitialiseClusteredDataSet_B, 
+            InitialiseDummyDataSet_A,
+            InitialiseClusteredDataSet_B,
             InitialiseStarShapedDataSet_C,
             InitialiseLinearGraphDataSet_D,
             //InitialiseCounterExampleTSP_DataSet_E
@@ -29,67 +33,75 @@ class Program
         //    GenerateResults2(data, $"DataSet_{dataGenerators.IndexOf(generator)}");
         //}
 
-        List<List<WayPoint>> randomDataStack = new();
-        List<List<WayPoint>> outlierDataStack = new();
-        List<List<WayPoint>> clusterDataStack = new();
+        //List<WayPoint> simonExample = new()
+        //{
+        //    new CentralServer(0, 0),
+        //    new DataNode(5,15,"A", TimeSpan.FromSeconds(1)),
+        //    new DataNode(4,20,"B", TimeSpan.FromSeconds(1)),
+        //    new DataNode(1,19,"C", TimeSpan.FromSeconds(1)),
+        //    new DataNode(6,23,"D", TimeSpan.FromSeconds(1)),
+        //    new DataNode(2,19,"E", TimeSpan.FromSeconds(1)),
+        //    new DataNode(3,14,"F", TimeSpan.FromSeconds(1)),
+        //    new DataNode(12,17,"G", TimeSpan.FromSeconds(1)),
+        //    new DataNode(4,13,"H", TimeSpan.FromSeconds(1)),
+        //};
+
+        //CreateResultDirectory(new Scenario(new List<List<WayPoint>>() { simonExample }, 9), "simon");
+
+        List<List<WayPoint>> randomDataTwelveNodes = new();
+        List<List<WayPoint>> randomDataFiftyNodes = new();
+
+        List<List<WayPoint>> outlierDataTwelveNodes = new();
+        List<List<WayPoint>> outlierDataFiftyNodes = new();
+
+        List<List<WayPoint>> clusterDataTwelveNodes = new();
+        List<List<WayPoint>> clusterDataFiftyNodes = new();
+
         const int SCENARIO_COUNT = 20;
 
-
-        for(int creationIndex = 0; creationIndex < SCENARIO_COUNT; creationIndex++)
+        for (int creationIndex = 0; creationIndex < SCENARIO_COUNT; creationIndex++)
         {
-            randomDataStack.Add(GenerateRectangularRandomDataSets(DateTime.MinValue, 10, 4));
-            randomDataStack.Add(GenerateRectangularRandomDataSets(DateTime.MinValue, 30, 4));
-            randomDataStack.Add(GenerateRectangularRandomDataSets(DateTime.MinValue, 50, 4));
+            randomDataTwelveNodes.Add(GenerateRectangularRandomDataSets(DateTime.MinValue, 12, 1));
+            randomDataFiftyNodes.Add(GenerateRectangularRandomDataSets(DateTime.MinValue, 50, 1));
 
-            outlierDataStack.Add(GenerateRectangularOutlierDataSets(DateTime.MinValue, 10, 4));
-            outlierDataStack.Add(GenerateRectangularOutlierDataSets(DateTime.MinValue, 30, 4));
-            outlierDataStack.Add(GenerateRectangularOutlierDataSets(DateTime.MinValue, 50, 4));
+            outlierDataTwelveNodes.Add(GenerateRectangularOutlierDataSets(DateTime.MinValue, 12, 1));
+            outlierDataFiftyNodes.Add(GenerateRectangularOutlierDataSets(DateTime.MinValue, 50, 1));
 
-            clusterDataStack.Add(GenerateRectangularClusteredDataSets(DateTime.MinValue, 10, 4));
-            clusterDataStack.Add(GenerateRectangularClusteredDataSets(DateTime.MinValue, 30, 4));
-            clusterDataStack.Add(GenerateRectangularClusteredDataSets(DateTime.MinValue, 50, 4));
+            clusterDataTwelveNodes.Add(GenerateRectangularClusteredDataSets(DateTime.MinValue, 12, 1));
+            clusterDataFiftyNodes.Add(GenerateRectangularClusteredDataSets(DateTime.MinValue, 50, 1));
         }
 
-        //indexed at 1 for readability in directory structure:
-        int dataSetNumber = 1;
-        foreach(var route in randomDataStack)
-        {
-            Directory.CreateDirectory($"randomsData_{dataSetNumber}");
-            JsonHandler.WriteToJson(Path.Combine($"randomsData_{dataSetNumber}", "data.json"), route);
-            GenerateResults2(route, $"randomsData_{dataSetNumber++}");
-        }
-        dataSetNumber = 1;
-        foreach (var route in outlierDataStack)
-        {
-            Directory.CreateDirectory($"outlier_{dataSetNumber}");
-            JsonHandler.WriteToJson(Path.Combine($"outlier_{dataSetNumber}", "data.json"), route);
-            GenerateResults2(route, $"outlier_{dataSetNumber++}");
-        }
-        dataSetNumber = 1;
-        foreach (var route in clusterDataStack)
-        {
-            Directory.CreateDirectory($"cluster_{dataSetNumber}");
-            JsonHandler.WriteToJson(Path.Combine($"cluster_{dataSetNumber}", "data.json"), route);
-            GenerateResults2(route, $"cluster_{dataSetNumber++}");
-        }
+        Scenario random_12 = new(randomDataTwelveNodes, 12);
+        Scenario random_50 = new(randomDataFiftyNodes, 50);
 
-        //List<WayPoint> randomData = new();
-        //List<WayPoint> notRandomData = InitialiseDummyDataSet_A();
-        //randomData.Add(new CentralServer(0, 0));
-        //randomData.AddRange(GenerateRectangularRandomDataSets(DateTime.MinValue, 30));
+        Scenario outlier_12 = new(outlierDataTwelveNodes, 12);
+        Scenario outlier_50 = new(outlierDataFiftyNodes, 50);
 
-        //Directory.CreateDirectory("randomData_1");
-        //JsonHandler.WriteToJson(Path.Combine("randomData_1", "data.json"),randomData);
+        Scenario cluster_12 = new(clusterDataTwelveNodes, 12);
+        Scenario cluster_50 = new(clusterDataFiftyNodes, 50);
 
-        ////List<WayPoint> readRandomData = JsonHandler.ReadFromJson(Path.Combine("randomData_1", "data.json"));
-        //GenerateResults2(randomData, "randomData_1");
+        CreateResultDirectory(random_12, nameof(random_12));
+        CreateResultDirectory(random_50, nameof(random_50));
+        CreateResultDirectory(outlier_12, nameof(outlier_12));
+        CreateResultDirectory(outlier_50, nameof(outlier_50));
+        CreateResultDirectory(cluster_12, nameof(cluster_12));
+        CreateResultDirectory(cluster_50, nameof(cluster_50));
     }
 
+    private static void CreateResultDirectory(Scenario scenario, string scenarioName)
+    {
+        foreach (var data in scenario.Data)
+        {
+            Directory.CreateDirectory($"{scenarioName}");
+            JsonHandler.WriteToJson(Path.Combine($"{scenarioName}", "data.json"), scenario);
+            GenerateResults(data, Path.Combine($"{scenarioName}", $"{scenario.Data.IndexOf(data)}"));
+        }
+    }
 
-    private static void GenerateResults2(List<WayPoint> data, string dataName)
+    private static void GenerateResults(List<WayPoint> data, string dataName)
     {
         //Keep track of all maxReactionTimes
-        double[] maxReactionTimes = new double[data.Count];
+        double[] maxReactionTimes = new double[data.Count-1];
 
         //Create root Directory for entire DataSet
         Directory.CreateDirectory(dataName);
@@ -108,25 +120,25 @@ class Program
         CentralServer ServerResults = SimulateRoute(christofidesRoute, totalSimulationDuration);
         WriteCSVandPlot(ServerResults, mstPath);
 
-        maxReactionTimes[0] = CalculateMaxReactionTime(christofidesRoute);
+        double christofidesMaxReactionTime = CalculateMaxReactionTime(christofidesRoute);
         WriteMetaFile(christofidesRoute, mstPath);
 
         //Create all routes with enforced Edges and simulate christofides with modified Spanning Trees
-        List<List<WayPoint>> modifiedCHristofidesRoutes = GenerateModifiedSpanningTreeChristofidesRoute(data);
+        List<List<WayPoint>> modifiedChristofidesRoutes = GenerateModifiedSpanningTreeChristofidesRoute(data);
         int modificationID = 1;
 
-        double minimumReactionTime = -1;
-
-        foreach(List<WayPoint> route in modifiedCHristofidesRoutes)
+        double minimumReactionTime = christofidesMaxReactionTime;
+        foreach (List<WayPoint> route in modifiedChristofidesRoutes)
         {
             double maxReactionTime = CalculateMaxReactionTime(route);
-            maxReactionTimes[modificationID] = maxReactionTime;
+            maxReactionTimes[modificationID-1] = maxReactionTime;
+            if(maxReactionTime < minimumReactionTime) minimumReactionTime = maxReactionTime;
 
             string routeName = $"ChristofidesModifiedOnVertex_{modificationID++}";
             Directory.CreateDirectory(Path.Combine(dataName, routeName));
-            WriteMetaFile(route, Path.Combine(dataName, routeName));
+            WriteMetaFile(route, Path.Combine(dataName, routeName), christofidesRoute);
 
-            ServerResults = SimulateRoute(route, 10);
+            ServerResults = SimulateRoute(route, (int)(HamiltonianTourLength(route) * 2));
             WriteCSVandPlot(ServerResults, Path.Combine(dataName, routeName));
         }
 
@@ -134,8 +146,17 @@ class Program
         {
             List<double> maxReactionTimesList = maxReactionTimes.ToList();
             int smallestMaxReactionIndex = maxReactionTimesList.IndexOf(maxReactionTimes.Min());
-            if(smallestMaxReactionIndex == 0)
+            if(minimumReactionTime == christofidesMaxReactionTime 
+                || modifiedChristofidesRoutes[smallestMaxReactionIndex].SequenceEqual(christofidesRoute))
             {
+                if (!BestSolutionCount.ContainsKey($"MST_{dataName.Split("\\")[0]}"))
+                {
+                    BestSolutionCount.Add($"MST_{dataName.Split("\\")[0]}", 1);
+                }
+                else
+                {
+                    BestSolutionCount[$"MST_{dataName.Split("\\")[0]}"]++;
+                }
                 file.Write("smallest MRT is the MST with route: ");
                 foreach(var vertex in christofidesRoute)
                 {
@@ -146,25 +167,67 @@ class Program
             else
             {
                 List<WayPoint> smallestMRTRoute = new();
-                if(smallestMaxReactionIndex == modifiedCHristofidesRoutes.Count)
+                if(smallestMaxReactionIndex == modifiedChristofidesRoutes.Count)
                 {
-                    smallestMRTRoute = modifiedCHristofidesRoutes[smallestMaxReactionIndex - 1];
+                    smallestMRTRoute = modifiedChristofidesRoutes[smallestMaxReactionIndex - 1];
                 }
                 else
                 {
-                    smallestMRTRoute = modifiedCHristofidesRoutes[smallestMaxReactionIndex];
+                    smallestMRTRoute = modifiedChristofidesRoutes[smallestMaxReactionIndex];
                 }
                 WayPoint first = smallestMRTRoute[0];
                 WayPoint second = smallestMRTRoute[1];
-                file.Write($"smallest MRT is the ST with with enforced edge: {first} - {second}");
+
+                bool enforcedEdgeIsLongestEdge = IsMaxDistanceFromStart(smallestMRTRoute, first, second);
+                if (enforcedEdgeIsLongestEdge)
+                {
+                    if (!BestSolutionCount.ContainsKey($"longestEdge_{dataName.Split("\\")[0]}"))
+                    {
+                        BestSolutionCount.Add($"longestEdge_{dataName.Split("\\")[0]}", 1);
+                    }
+                    else
+                    {
+                        BestSolutionCount[$"longestEdge_{dataName.Split("\\")[0]}"]++;
+                    }
+                }
+                else
+                {
+                    if (!BestSolutionCount.ContainsKey($"other_{dataName.Split("\\")[0]}"))
+                    {
+                        BestSolutionCount.Add($"other_{dataName.Split("\\")[0]}", 1);
+                    }
+                    else
+                    {
+                        BestSolutionCount[$"other_{dataName.Split("\\")[0]}"]++;
+                    }
+                }
+
+                file.Write($"smallest MRT is the ST with with enforced edge: {first} - {second} and distance {first.DistanceTo(second)}");
                 file.WriteLine($"\nTotal length of the tour with smallest MRT is: {HamiltonianTourLength(smallestMRTRoute)}");
+                file.WriteLine($"enforced edge == longest edge from start: {enforcedEdgeIsLongestEdge}");
+            }
+            foreach(var kvp in BestSolutionCount)
+            {
+                file.WriteLine($"Count of {kvp.Key} as best solution on dataset {dataName.Split("\\")[0]} is: {kvp.Value}");
             }
         }
         HistogramPlotter plotter = new HistogramPlotter();
         plotter.PlotMaxReactionTimesPicture(maxReactionTimes, 5, dataName);
     }
 
-    private static void WriteMetaFile(List<WayPoint> route, string path)
+    private static bool IsMaxDistanceFromStart(List<WayPoint> smallestMRTRoute, WayPoint first, WayPoint second)
+    {
+        double maxDistance = -1;
+
+        foreach(var vertex in smallestMRTRoute)
+        {
+            if (vertex.Equals(first)) continue;
+            maxDistance = first.DistanceTo(vertex) > maxDistance ? first.DistanceTo(vertex) : maxDistance;
+        }
+        return maxDistance == first.DistanceTo(second);
+    }
+
+    private static void WriteMetaFile(List<WayPoint> route, string path, List<WayPoint> mst_route = null)
     {
         using (StreamWriter file = new(Path.Combine(path, "meta.txt")))
         {
@@ -175,6 +238,7 @@ class Program
             file.WriteLine($"\nLength of entire route: {HamiltonianTourLength(route)}");
             file.WriteLine($"Maximum Reaction Time: {CalculateMaxReactionTime(route)}");
             file.WriteLine($"Length of the first edge: {route[0].DistanceTo(route[1])}");
+            if (mst_route != null) file.WriteLine($"Is MST: {route.SequenceEqual(mst_route)}");
         }
     }
 
@@ -246,20 +310,7 @@ class Program
             paths.Add(filePath);
         }
         HistogramPlotter plotter = new HistogramPlotter();
-        plotter.PlotMultipleReactionTimeHistogram(paths.ToArray());
-    }
-
-    private static void printTour(List<WayPoint> tour)
-    {
-        foreach (WayPoint vertex in tour)
-        {
-            if (vertex is DataNode)
-            {
-                DataNode vert = (DataNode)vertex;
-                //Console.WriteLine(vert.ID);
-            }
-            //else if (vertex is CentralServer) Console.WriteLine("Central Server!");
-        }
+        plotter.PlotMultipleReactionTimeHistogram(paths.ToArray(), directoryPath);
     }
 
     private static List<WayPoint> InitialiseDummyDataSet_A()
@@ -372,7 +423,6 @@ class Program
         return result;
     }
 
-
     //Scenarios
     public static List<WayPoint> GenerateRectangularRandomDataSets(DateTime startTime, int countDataNodes,
         int fixedDataNodePeriod = -1, int xBounds = 100, int yBounds = 100)
@@ -398,100 +448,101 @@ class Program
         }
         return dataPoints;
     }
-    public static List<WayPoint> GenerateRectangularOutlierDataSets(DateTime startTime, int countDataNodes,
-    int fixedDataNodePeriod = -1, int xBounds = 100, int yBounds = 100, int outlierCount = 1, int outlierFactor = 5)
+
+    public static List<WayPoint> GenerateRectangularOutlierDataSets(DateTime startTime, int countDataNode, 
+        int fixedDataNodePeriod = -1, int xBounds = 100, int yBounds = 100, int outlierCount = 1, int outlierFactor = 1)
     {
         Random random = new Random();
-        List<WayPoint> dataPoints = new List<WayPoint>();
-        dataPoints.Add(new CentralServer(xBounds / 2, yBounds / 2));
-        // Define closer range boundaries for normal points - outlierFactor is the denominator, so the smaller it is the smaller is the area that is considered "normal points"
-        int closeRangeX = xBounds / outlierFactor;
-        int closeRangeY = yBounds / outlierFactor;
+        List<WayPoint> points = new List<WayPoint>();
+        int zonesCount = outlierFactor + 1;
 
-        // Generate normal points
-        for (int i = 0; i < countDataNodes - outlierCount; i++)
+        double zoneWidth = (double)xBounds / zonesCount;
+        double zoneHeight = (double)yBounds / zonesCount;
+
+        points.Add(new CentralServer(zoneWidth / 2, zoneHeight / 2));
+
+        for (int numberNodesAdded = 0; numberNodesAdded < countDataNode; numberNodesAdded++)
         {
-            int x = random.Next(0, closeRangeX);
-            int y = random.Next(0, closeRangeY);
-            TimeSpan period = new TimeSpan();
-            if (fixedDataNodePeriod == -1)
+            points.Add(new DataNode
             {
-                period = TimeSpan.FromSeconds(random.Next(1, 5));
-            }
-            else
-            {
-                period = TimeSpan.FromSeconds(fixedDataNodePeriod);
-            }
-            string id = Guid.NewGuid().ToString().Substring(0, 5); // Generate a unique ID
-            dataPoints.Add(new DataNode(x, y, period, startTime, id));
+                X = random.NextDouble() * zoneWidth,
+                Y = random.NextDouble() * zoneHeight,
+                ID = Guid.NewGuid().ToString().Substring(0, 4),
+                TransmissionPeriod = TimeSpan.FromSeconds(fixedDataNodePeriod == -1 ? random.Next(0, 4) : fixedDataNodePeriod),
+            });
         }
 
-        // Generate outliers
+        // Generiere Ausreißer
         for (int i = 0; i < outlierCount; i++)
         {
-            int x = random.Next(closeRangeX, xBounds);
-            int y = random.Next(closeRangeY, yBounds);
-            TimeSpan period = new TimeSpan();
-            if (fixedDataNodePeriod == -1)
+            points.Add(new DataNode
             {
-                period = TimeSpan.FromSeconds(random.Next(1, 5));
-            }
-            else
-            {
-                period = TimeSpan.FromSeconds(fixedDataNodePeriod);
-            }
-            string id = Guid.NewGuid().ToString().Substring(0, 5); // Generate a unique ID
-            dataPoints.Add(new DataNode(x, y, period, startTime, id));
+                X = random.NextDouble() * zoneWidth + (zonesCount-1) * zoneWidth,
+                Y = random.NextDouble() * zoneHeight + (zonesCount-1) * zoneHeight,
+                ID = Guid.NewGuid().ToString().Substring(0, 4),
+                TransmissionPeriod = TimeSpan.FromSeconds(fixedDataNodePeriod == -1 ? random.Next(0, 4) : fixedDataNodePeriod),
+            });
         }
 
-        return dataPoints;
+        return points;
     }
-    public static List<WayPoint> GenerateRectangularClusteredDataSets(DateTime startTime, int countDataNodes,
-    int clusterCount, int fixedDataNodePeriod = -1, int xBounds = 100, int yBounds = 100, int clusterBoundary = 10)
+
+    public static List<WayPoint> GenerateRectangularClusteredDataSets(DateTime startTime, int countDataNode,
+        int fixedDataNodePeriod = -1, int xBounds = 100, int yBounds = 100, int countClusters = 3)
     {
         Random random = new Random();
-        List<WayPoint> dataPoints = new List<WayPoint>();
-        List<(int x, int y)> clusterCenters = new List<(int x, int y)>();
-        dataPoints.Add(new CentralServer(xBounds / 2, yBounds / 2));
-        // Determine cluster centers
-        for (int i = 0; i < clusterCount; i++)
-        {
-            int clusterX = random.Next(0, xBounds);
-            int clusterY = random.Next(0, yBounds);
-            clusterCenters.Add((clusterX, clusterY));
-        }
+        List<WayPoint> points = new List<WayPoint>();
+        points.Add(new CentralServer(xBounds / 2, yBounds / 2));
+        // Berechne die Anzahl der Cluster pro Dimension
+        int clustersPerDimension = (int)Math.Ceiling(Math.Sqrt(countClusters));
 
-        // Distribute points among clusters
-        int pointsPerCluster = countDataNodes / clusterCount;
-        int remainingPoints = countDataNodes % clusterCount;
+        // Berechne die Größe jedes Cluster-Quadrats
+        double clusterWidth = (double)xBounds / clustersPerDimension;
+        double clusterHeight = (double)yBounds / clustersPerDimension;
 
-        for (int i = 0; i < clusterCount; i++)
+        // Erstelle eine Liste von verfügbaren Cluster-Positionen
+        List<(int x, int y)> availableClusters = new List<(int x, int y)>();
+        for (int x = 0; x < clustersPerDimension; x++)
         {
-            int pointsInThisCluster = pointsPerCluster + (i < remainingPoints ? 1 : 0);
-            for (int j = 0; j < pointsInThisCluster; j++)
+            for (int y = 0; y < clustersPerDimension; y++)
             {
-                // Generate points around the cluster center within a small boundary
-                int x = clusterCenters[i].x + random.Next(-xBounds / clusterBoundary, xBounds / clusterBoundary);
-                int y = clusterCenters[i].y + random.Next(-yBounds / clusterBoundary, yBounds / clusterBoundary);
-
-                // Ensure points are within bounds
-                x = Math.Max(0, Math.Min(x, xBounds));
-                y = Math.Max(0, Math.Min(y, yBounds));
-
-                TimeSpan period = new TimeSpan();
-                if (fixedDataNodePeriod == -1)
+                if (availableClusters.Count < countClusters)
                 {
-                    period = TimeSpan.FromSeconds(random.Next(1, 5));
+                    availableClusters.Add((x, y));
                 }
-                else
-                {
-                    period = TimeSpan.FromSeconds(fixedDataNodePeriod);
-                }
-                string id = Guid.NewGuid().ToString().Substring(0, 5); // Generate a unique ID
-                dataPoints.Add(new DataNode(x, y, period, startTime, id));
             }
         }
 
-        return dataPoints;
+        List<(int x, int y)> chosenClusters = new();
+        for(int i = 0; i < countClusters; i++)
+        {
+            int chosenIndex = random.Next(0, availableClusters.Count);
+            chosenClusters.Add(availableClusters[chosenIndex]);
+            availableClusters.RemoveAt(chosenIndex);
+        }
+
+        // Verteile die Punkte auf die Cluster
+        for (int i = 0; i < countDataNode; i++)
+        {
+            int clusterIndex = i % countClusters;
+            var (clusterX, clusterY) = chosenClusters[clusterIndex];
+
+            // Berechne die Grenzen des gewählten Cluster-Quadrats
+            double left = clusterX * clusterWidth;
+            double top = clusterY * clusterHeight;
+
+            // Generiere einen zufälligen Punkt innerhalb des Cluster-Quadrats
+            double x = left + random.NextDouble() * clusterWidth;
+            double y = top + random.NextDouble() * clusterHeight;
+
+            points.Add(new DataNode
+            {
+                X = x,
+                Y = y,
+                ID = Guid.NewGuid().ToString().Substring(0, 4),
+                TransmissionPeriod = TimeSpan.FromSeconds(fixedDataNodePeriod == -1 ? random.Next(0, 4) : fixedDataNodePeriod)
+            });
+        }
+        return points;
     }
 }

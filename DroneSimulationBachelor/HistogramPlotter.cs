@@ -16,7 +16,7 @@ namespace DroneSimulationBachelor
 
         public void PlotReactionTimeHistogram(string path)
         {
-            List<double> reactionTimes = extractReactionTimes(path);
+            List<double> reactionTimes = ExtractReactionTimes(path);
             GenerateReactionTimePlotPicture(path,reactionTimes);
         }
 
@@ -50,7 +50,7 @@ namespace DroneSimulationBachelor
             //plt.AddScatterLines(hist.Bins,hist.Counts, Color.Magenta, 2, LineStyle.Solid);
 
 
-            plt.Title(path);
+            plt.Title("Accumulated Distribution");
             plt.YAxis.Label("Count (#)");
             plt.XAxis.Label("Timespan (in sec)");
             plt.YAxis2.Label("distribution");
@@ -61,17 +61,17 @@ namespace DroneSimulationBachelor
             plt.SaveFig($"{path}.png");
         }
 
-        public void PlotMultipleReactionTimeHistogram(string[] paths, string suffix = "")
+        public void PlotMultipleReactionTimeHistogram(string[] paths, string directoryPath)
         {
             List<double> allReactionTimes = new();
 
             foreach(string path in paths)
             {
-                List<double> reactionTimes = extractReactionTimes(path);
-                GenerateReactionTimePlotPicture(path, reactionTimes);
+                List<double> reactionTimes = ExtractReactionTimes(path);
+                //GenerateReactionTimePlotPicture(path, reactionTimes);
                 allReactionTimes.AddRange(reactionTimes);
             }
-            GenerateReactionTimePlotPicture($"Accumulated_Distribution{suffix}", allReactionTimes, 50);
+            GenerateReactionTimePlotPicture(Path.Combine(directoryPath, "Accumulated_Distribution"), allReactionTimes, 50);
         }
 
         public void PlotMaxReactionTimesPicture(double[] maxReactionTimes, int binCount, string path = ".")
@@ -115,7 +115,7 @@ namespace DroneSimulationBachelor
             plt.SaveFig(Path.Combine(path, $"MaximumReactionTimes.png"));
         }
 
-        private static List<double> extractReactionTimes(string path)
+        private static List<double> ExtractReactionTimes(string path)
         {
             List<double> reactionTimes = new();
             // show the histogram counts as a bar plot

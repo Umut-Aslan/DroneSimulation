@@ -3,22 +3,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DroneSimulationBachelor;
 using DroneSimulationBachelor.Abstractions;
 using DroneSimulationBachelor.Model;
 
 public class JsonHandler
 {
-    public static void WriteToJson(string filePath, List<WayPoint> points)
+    public static void WriteToJson(string filePath, Scenario scenario)
     {
         var options = new JsonSerializerOptions { WriteIndented = true };
-        string jsonString = JsonSerializer.Serialize(points, options);
+        string jsonString = JsonSerializer.Serialize(scenario, options);
         File.WriteAllText(filePath, jsonString);
     }
 
-    public static List<WayPoint> ReadFromJson(string filePath)
+    public static Scenario ReadFromJson(string filePath)
     {
         string jsonString = File.ReadAllText(filePath);
         JsonSerializerOptions options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        return JsonSerializer.Deserialize<List<WayPoint>>(jsonString, options);
+        return JsonSerializer.Deserialize<Scenario>(jsonString, options);
     }
 }
