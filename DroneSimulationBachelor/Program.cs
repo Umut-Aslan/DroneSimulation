@@ -24,29 +24,7 @@ class Program
             InitialiseClusteredDataSet_B,
             InitialiseStarShapedDataSet_C,
             InitialiseLinearGraphDataSet_D,
-            //InitialiseCounterExampleTSP_DataSet_E
         };
-
-        //foreach(var generator in dataGenerators)
-        //{
-        //    List<WayPoint> data = generator();
-        //    GenerateResults2(data, $"DataSet_{dataGenerators.IndexOf(generator)}");
-        //}
-
-        //List<WayPoint> simonExample = new()
-        //{
-        //    new CentralServer(0, 0),
-        //    new DataNode(5,15,"A", TimeSpan.FromSeconds(1)),
-        //    new DataNode(4,20,"B", TimeSpan.FromSeconds(1)),
-        //    new DataNode(1,19,"C", TimeSpan.FromSeconds(1)),
-        //    new DataNode(6,23,"D", TimeSpan.FromSeconds(1)),
-        //    new DataNode(2,19,"E", TimeSpan.FromSeconds(1)),
-        //    new DataNode(3,14,"F", TimeSpan.FromSeconds(1)),
-        //    new DataNode(12,17,"G", TimeSpan.FromSeconds(1)),
-        //    new DataNode(4,13,"H", TimeSpan.FromSeconds(1)),
-        //};
-
-        //CreateResultDirectory(new Scenario(new List<List<WayPoint>>() { simonExample }, 9), "simon");
 
         List<List<WayPoint>> randomDataTwelveNodes = new();
         List<List<WayPoint>> randomDataFiftyNodes = new();
@@ -80,12 +58,21 @@ class Program
         Scenario cluster_12 = new(clusterDataTwelveNodes, 12);
         Scenario cluster_50 = new(clusterDataFiftyNodes, 50);
 
+        Stopwatch sw = new();
+        sw.Start();
         CreateResultDirectory(random_12, nameof(random_12));
         CreateResultDirectory(random_50, nameof(random_50));
         CreateResultDirectory(outlier_12, nameof(outlier_12));
         CreateResultDirectory(outlier_50, nameof(outlier_50));
         CreateResultDirectory(cluster_12, nameof(cluster_12));
         CreateResultDirectory(cluster_50, nameof(cluster_50));
+        sw.Stop();
+
+        using (StreamWriter file = new(Path.Combine("./","fullSimulation.txt")))
+        {
+            TimeSpan fullSimulation = TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds);
+            file.WriteLine($"The calculation of the entire simulation took {fullSimulation}");
+        }
     }
 
     private static void CreateResultDirectory(Scenario scenario, string scenarioName)
@@ -100,6 +87,7 @@ class Program
 
     private static void GenerateResults(List<WayPoint> data, string dataName)
     {
+        Stopwatch stopwatch = new Stopwatch();
         //Keep track of all maxReactionTimes
         double[] maxReactionTimes = new double[data.Count-1];
 
@@ -110,7 +98,16 @@ class Program
         string mstPath = Path.Combine(dataName, "MST_Solution"); 
         Directory.CreateDirectory(mstPath);
         //Create routes and simulate the normal christofides with MST
+        stopwatch.Start();
         List<WayPoint> christofidesRoute = GenerateChristofidesRoute(data);
+        stopwatch.Stop();
+
+        using (StreamWriter file = new(Path.Combine(mstPath, "calculationTime.txt")))
+        {
+            TimeSpan timeSpan = TimeSpan.FromMilliseconds(stopwatch.ElapsedMilliseconds);
+            file.WriteLine($"The calculation of the MST took {timeSpan}");
+        }
+        stopwatch.Reset();
 
         double simulationPeriod = HamiltonianTourLength(christofidesRoute);
         int numberOfCycles = 3;
@@ -118,6 +115,7 @@ class Program
         int totalSimulationDuration = (int)(Math.Ceiling((numberOfCycles * simulationPeriod)));
 
         CentralServer ServerResults = SimulateRoute(christofidesRoute, totalSimulationDuration);
+
         WriteCSVandPlot(ServerResults, mstPath);
 
         double christofidesMaxReactionTime = CalculateMaxReactionTime(christofidesRoute);
@@ -287,8 +285,6 @@ class Program
         double totalTourLength = HamiltonianTourLength(route);
         double restOfTourLength = totalTourLength - route[0].DistanceTo(route[1]);
 
-        //Console.WriteLine($" total tour length: {totalTourLength} restOfTourLength: {restOfTourLength}");
-
         return CalculateMaxReactionTime(totalTourLength, restOfTourLength);
     }
     private static double CalculateMaxReactionTime(double totalTourLength, double restOfTourLength)
@@ -394,10 +390,6 @@ class Program
 
         return new List<WayPoint>() { X, d1, d2, d3, d4, d5, d6, d7 };
     }
-    private static List<WayPoint> InitialiseCounterExampleTSP_DataSet_E()
-    {
-        throw new NotImplementedException();
-    }
 
     private static double HamiltonianTourLength(List<WayPoint> tour)
     {
@@ -450,7 +442,7 @@ class Program
     }
 
     public static List<WayPoint> GenerateRectangularOutlierDataSets(DateTime startTime, int countDataNode, 
-        int fixedDataNodePeriod = -1, int xBounds = 100, int yBounds = 100, int outlierCount = 1, int outlierFactor = 1)
+        int fixedDataNodePeriod = -1, int xBounds = 150, int yBounds = 150, int outlierCount = 1, int outlierFactor = 2)
     {
         Random random = new Random();
         List<WayPoint> points = new List<WayPoint>();
